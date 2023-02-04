@@ -1,7 +1,7 @@
 
 # WavyTabBar
 
-A wavy tab which animates when you tab on any tab bar item based on answer from https://stackoverflow.com/questions/75332697/animate-tab-bar-shape-created-using-uibezierpath-based-on-selected-index/75333095#75333095
+A wavy tab which animates when you tab on any tab bar item based on answer from https://rb.gy/ivurgv
 
 
 ## Demo
