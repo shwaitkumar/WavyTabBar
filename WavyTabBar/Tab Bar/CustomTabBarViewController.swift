@@ -61,10 +61,15 @@ class CustomTabBarViewController: UITabBarController {
         let trough = waveView.trough
         let tabBarFrame = view.convert(tabBar.bounds, from: tabBar)
         let waveFrame = CGRect(
+//            x: tabBarFrame.origin.x + tabBarFrame.size.width * w,
+//            y: tabBarFrame.origin.y - trough,
+//            width: 2 * tabBarFrame.size.width,
+//            height: tabBarFrame.size.height + trough
+            
             x: tabBarFrame.origin.x + tabBarFrame.size.width * w,
-            y: tabBarFrame.origin.y - trough,
+            y: tabBarFrame.origin.y - 1.33 * trough, // pull shape a little above on y-axis
             width: 2 * tabBarFrame.size.width,
-            height: tabBarFrame.size.height + trough
+            height: tabBarFrame.size.height + 1.33 * trough // increase height so the space at bottom alos fills if you pull shape above on y-axis
         )
 
         guard waveFrame != waveView.frame else {
@@ -74,7 +79,7 @@ class CustomTabBarViewController: UITabBarController {
         if shouldAnimate {
             // Don't animate during the layout pass.
             DispatchQueue.main.async { [waveView] in
-                UIView.animate(withDuration: 0.2, delay: 0, options: .curveEaseOut) {
+                UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseOut) {
                     waveView.frame = waveFrame
                 }
             }
