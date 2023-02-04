@@ -7,82 +7,55 @@
 
 import UIKit
 
-class CustomTabBar: UITabBar {
-    
-    private var shapeLayer: CAShapeLayer?
-    
-    private func addShape() {
-        let shapeLayer = CAShapeLayer()
-        shapeLayer.path = createPath()
-        shapeLayer.fillColor = UIColor.secondarySystemBackground.cgColor
-        
-        if let oldShapeLayer = self.shapeLayer {
-            self.layer.replaceSublayer(oldShapeLayer, with: shapeLayer)
-        } else {
-            self.layer.insertSublayer(shapeLayer, at: 0)
-        }
-        
-        self.shapeLayer = shapeLayer
+class WaveView: UIView {
+    var trough: CGFloat {
+        didSet { setNeedsDisplay() }
     }
-    
+
+    var color: UIColor {
+        didSet { setNeedsDisplay() }
+    }
+
+    init(trough: CGFloat, color: UIColor = .white) {
+        self.trough = trough
+        self.color = color
+
+        super.init(frame: .zero)
+
+        contentMode = .redraw
+        isOpaque = false
+    }
+
     override func draw(_ rect: CGRect) {
-        self.addShape()
+        guard let gc = UIGraphicsGetCurrentContext() else { return }
+
+        let bounds = self.bounds
+        let size = bounds.size
+        gc.translateBy(x: bounds.origin.x, y: bounds.origin.y)
+
+        gc.move(to: .init(x: 0, y: size.height))
+
+        gc.saveGState(); do {
+            // Transform the geometry so the bounding box of the curve
+            // is (-1, 0) to (+1, +1), with the y axis going up.
+            gc.translateBy(x: bounds.midX, y: trough)
+//            gc.scaleBy(x: bounds.size.width * 0.5, y: -trough)
+            gc.scaleBy(x: bounds.size.width * 0.8, y: -trough) // for longer wave
+
+            // Now draw the curve.
+            for x in stride(from: -1, through: 1, by: 2 / size.width) {
+                let y = (cos(2.5 * .pi * x) + 1) / 2 * (1 - x * x)
+                gc.addLine(to: .init(x: x, y: y))
+            }
+        }; gc.restoreGState()
+
+        // The geometry is restored.
+        gc.addLine(to: .init(x: size.width, y: size.height))
+        gc.closePath()
+
+        gc.setFillColor(UIColor.white.cgColor)
+        gc.fillPath()
     }
-    
-    func createPath() -> CGPath {
-        let height: CGFloat = 40.0 // Height of the wave-like curve
-        let extraHeight: CGFloat = -20.0 // Additional height for top left and top right corners
-        let path = UIBezierPath()
-        let width = self.frame.width
-        // Creating a wave-like top edge for tab bar starting from left side
-        path.move(to: CGPoint(x: 0, y: extraHeight)) // Start at top left corner with extra height
-        path.addQuadCurve(to: CGPoint(x: width/2, y: extraHeight), controlPoint: CGPoint(x: width/4, y: extraHeight - height))
-        path.addQuadCurve(to: CGPoint(x: width, y: extraHeight), controlPoint: CGPoint(x: width*3/4, y: extraHeight + height))
-        path.addLine(to: CGPoint(x: self.frame.width, y: self.frame.height))
-        path.addLine(to: CGPoint(x: 0, y: self.frame.height))
-        path.close()
-        return path.cgPath
-    }
 
-    func updateShape(with selectedIndex: Int) {
-        let shapeLayer = CAShapeLayer()
-        let height: CGFloat = 40.0
-        let extraHeight: CGFloat = -20.0
-        let width = self.frame.width
-
-        let path = UIBezierPath()
-        path.move(to: CGPoint(x: 0, y: extraHeight))
-        if selectedIndex == 0 {
-            path.addQuadCurve(to: CGPoint(x: width / 2, y: extraHeight), controlPoint: CGPoint(x: width / 4, y: extraHeight - height))
-            path.addQuadCurve(to: CGPoint(x: width, y: extraHeight), controlPoint: CGPoint(x: width / 2 + width / 4, y: extraHeight + height))
-        }
-        else if selectedIndex == 1 {
-            path.addQuadCurve(to: CGPoint(x: width / 2 + width / 4, y: extraHeight), controlPoint: CGPoint(x: width / 4 + width / 4, y: extraHeight - height))
-            path.addQuadCurve(to: CGPoint(x: width, y: extraHeight), controlPoint: CGPoint(x: width * 3 / 4 + width / 4, y: extraHeight + height))
-        }
-        else if selectedIndex == 2 {
-            let xShift = width / 4
-            path.addQuadCurve(to: CGPoint(x: width / 2 + xShift, y: extraHeight), controlPoint: CGPoint(x: width / 8 + xShift, y: extraHeight + height))
-            path.addQuadCurve(to: CGPoint(x: width, y: extraHeight), controlPoint: CGPoint(x: width * 7 / 8 + xShift, y: extraHeight - height))
-        }
-        else {
-            path.addQuadCurve(to: CGPoint(x: width / 2, y: extraHeight), controlPoint: CGPoint(x: width / 4, y: extraHeight + height))
-            path.addQuadCurve(to: CGPoint(x: width, y: extraHeight), controlPoint: CGPoint(x: width / 2 + width / 4, y: extraHeight - height))
-        }
-        path.addLine(to: CGPoint(x: width, y: self.frame.height))
-        path.addLine(to: CGPoint(x: 0, y: self.frame.height))
-        path.close()
-
-        shapeLayer.path = path.cgPath
-        shapeLayer.fillColor = UIColor.secondarySystemBackground.cgColor
-
-        if let oldShapeLayer = self.shapeLayer {
-            self.layer.replaceSublayer(oldShapeLayer, with: shapeLayer)
-        } else {
-            self.layer.insertSublayer(shapeLayer, at: 0)
-        }
-
-        self.shapeLayer = shapeLayer
-    }
-    
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 }

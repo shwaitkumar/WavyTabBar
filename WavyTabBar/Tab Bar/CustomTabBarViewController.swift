@@ -7,25 +7,15 @@
 
 import UIKit
 
-class CustomTabBarViewController: UITabBarController, UITabBarControllerDelegate {
+class CustomTabBarViewController: UITabBarController {
+    
+    let waveView = WaveView(trough: 40)
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        self.delegate = self
         
-        let tabBar = { () -> CustomTabBar in
-            let tabBar = CustomTabBar()
-            tabBar.delegate = self
-            return tabBar
-        }()
-        self.setValue(tabBar, forKey: "tabBar")
-        
-        tabBar.barTintColor = .red
-        UITabBar.appearance().clipsToBounds = false
-        tabBar.tintColor = .black
-        tabBar.unselectedItemTintColor = .lightGray
-        tabBar.itemPositioning = .centered
-        
+//        tabBar.backgroundColor = .white
+
         // Create the first view controller
         let firstViewController = ViewController()
         firstViewController.tabBarItem = UITabBarItem(title: "First", image: UIImage(systemName: "house"), tag: 0)
@@ -43,17 +33,61 @@ class CustomTabBarViewController: UITabBarController, UITabBarControllerDelegate
         fourthViewController.tabBarItem = UITabBarItem(title: "Fourth", image: UIImage(systemName: "poweroutlet.type.f"), tag: 3)
 
         // Add the view controllers to the tab bar controller
-        viewControllers = [firstViewController, secondViewController, thirdViewController, fourthViewController]
+        self.viewControllers = [firstViewController, secondViewController, thirdViewController, fourthViewController]
+        
     }
-    
-    func tabBarController(_ tabBarController: UITabBarController, didSelect viewController: UIViewController) {
-        let tabBar = tabBarController.tabBar as! CustomTabBar
-        guard let index = viewControllers?.firstIndex(of: viewController) else {
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+
+        let shouldAnimate: Bool
+
+        if waveView.superview != view {
+            view.insertSubview(waveView, at: 1)
+            shouldAnimate = false
+        } else {
+            shouldAnimate = true
+        }
+
+        let tabBar = self.tabBar
+        let w: CGFloat
+
+        if let selected = tabBar.selectedItem, let items = tabBar.items {
+            w = (CGFloat(items.firstIndex(of: selected) ?? 0) + 0.5) / CGFloat(items.count) - 1
+        } else {
+            w = -1
+        }
+
+        let trough = waveView.trough
+        let tabBarFrame = view.convert(tabBar.bounds, from: tabBar)
+        let waveFrame = CGRect(
+            x: tabBarFrame.origin.x + tabBarFrame.size.width * w,
+            y: tabBarFrame.origin.y - trough,
+            width: 2 * tabBarFrame.size.width,
+            height: tabBarFrame.size.height + trough
+        )
+
+        guard waveFrame != waveView.frame else {
             return
         }
 
-        tabBar.updateShape(with: index)
+        if shouldAnimate {
+            // Don't animate during the layout pass.
+            DispatchQueue.main.async { [waveView] in
+                UIView.animate(withDuration: 0.2, delay: 0, options: .curveEaseOut) {
+                    waveView.frame = waveFrame
+                }
+            }
+        } else {
+            waveView.frame = waveFrame
+        }
     }
-
+    
+    override func tabBar(_ tabBar: UITabBar, didSelect item: UITabBarItem) {
+        if superclass!.instancesRespond(to: #selector(UITabBarDelegate.tabBar(_:didSelect:))) {
+            super.tabBar(tabBar, didSelect: item)
+        }
+        view.setNeedsLayout()
+    }
 
 }
